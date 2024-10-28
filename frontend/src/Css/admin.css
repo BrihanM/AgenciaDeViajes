@@ -1,0 +1,111 @@
+/* Estilos comunes para páginas de administración */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .admin-header {
+    color: rgb(0, 0, 0);
+    padding: 1rem;
+    text-align: center;
+  }
+  
+  .admin-title {
+    margin: 0;
+  }
+  
+  .admin-content {
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-top: 20px;
+  }
+  
+  .admin-form {
+    display: grid;
+    gap: 1rem;
+
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  label {
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+  }
+  
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #000000;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  .btn {
+    background-color: #cc0000;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+    width: 15%;
+  }
+  
+  .btn:hover {
+    background-color: #990000;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+  
+  th, td {
+    text-align: left;
+    padding: 0.5rem;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  th {
+    background-color: #cc0000;
+    color: white;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+  
+  .action-btn {
+    background-color: transparent;
+    border: none;
+    color: #cc0000;
+    cursor: pointer;
+    margin-right: 0.5rem;
+  }
+  
+  .action-btn:hover {
+    text-decoration: underline;
+  }

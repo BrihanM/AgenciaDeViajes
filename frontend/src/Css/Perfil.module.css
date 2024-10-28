@@ -1,0 +1,92 @@
+.perfilPage {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff00;
+  }
+  
+  .perfilContainer {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .perfilTitle {
+    font-size: 24px;
+    color: #030222;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .perfilInfo {
+    margin-bottom: 20px;
+  }
+  
+  .infoItem {
+    margin-bottom: 10px;
+  }
+  
+  .label {
+    font-weight: bold;
+    color: #555;
+    margin-right: 10px;
+  }
+  
+  .value {
+    color: #333;
+  }
+  
+  .editButton {
+    background-color: #d74849;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    display: block;
+    margin: 0 auto;
+  }
+  
+  .editButton:hover {
+    background-color: #c13e3f;
+  }
+  
+  .editForm {
+    margin-top: 20px;
+  }
+  
+  .formGroup {
+    margin-bottom: 15px;
+  }
+  
+  .input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  
+  .saveButton {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    display: block;
+    margin: 20px auto 0;
+  }
+  
+  .saveButton:hover {
+    background-color: #45a049;
+  }
