@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import '../Css/AdminDashboard.css';
 
 export default function AdminDashboard() {
@@ -13,7 +14,15 @@ export default function AdminDashboard() {
 
   //Airplanes
   const [airplanes, setAirplanes] = useState([]);
-  const [newAirplane, setNewAirplane] = useState({ model: '', capacity: '', status: 'Activo' });
+  const [newAirplane, setNewAirplane] = useState({
+    Modelo: '',
+    Fabricante: '',
+    Año_Fabricacion: '',
+    Numero_Asientos: '',
+    Capacidad_Carga: '',
+    NIT_ContratistaFK: ''
+  });
+  const [editingAirplane, setEditingAirplane] = useState(null);
 
   //Furniture
   const [furniture, setFurniture] = useState([]);
@@ -40,10 +49,9 @@ export default function AdminDashboard() {
       { id: 2, name: 'María López', position: 'Azafata', email: 'maria@example.com' },
     ]);
     //Airplanes (Aviones)
-    setAirplanes([
-      { id: 1, model: 'Boeing 737', capacity: 150, status: 'Activo' },
-      { id: 2, model: 'Airbus A320', capacity: 180, status: 'En mantenimiento' },
-    ]);
+    if (activeTab === 'airplane') {
+      fetchAirplanes();
+    }
     //Furniture (Muebles)
     setFurniture([
       { id: 1, name: 'Silla de oficina', location: 'Oficina principal', condition: 'Bueno' },
@@ -59,7 +67,7 @@ export default function AdminDashboard() {
       { id: 1, name: 'Cargador de equipaje', type: 'Vehículo de tierra', status: 'Operativo' },
       { id: 2, name: 'Escalera de pasajeros', type: 'Equipo de embarque', status: 'En reparación' },
     ]);
-  }, []);
+  }, [activeTab]);
 
   const handleNewTripChange = (e) => {
     const { name, value } = e.target;
@@ -100,16 +108,69 @@ export default function AdminDashboard() {
   };
 
   //Constantes usadas en Airplanes
-  const handleInputChangeAirplanes = (e) => {
-    setNewAirplane({ ...newAirplane, [e.target.name]: e.target.value });
+  const fetchAirplanes = async () => {
+    try {
+      const response = await axios.get('http://localhost:8085/api/airplanes');
+      setAirplanes(response.data);
+    } catch (error) {
+      console.error('Error fetching airplanes:', error);
+    }
   };
 
-  const handleAddAirplane = (e) => {
+  const handleInputChangeAirplane = (e) => {
+    const { name, value } = e.target;
+    if (editingAirplane) {
+      setEditingAirplane({ ...editingAirplane, [name]: value });
+    } else {
+      setNewAirplane({ ...newAirplane, [name]: value });
+    }
+  };
+
+  const handleAddAirplane = async (e) => {
     e.preventDefault();
-    if (newAirplane.model && newAirplane.capacity) {
-      setAirplanes([...airplanes, { ...newAirplane, id: Date.now() }]);
-      setNewAirplane({ model: '', capacity: '', status: 'Activo' });
-      // Aquí iría la lógica para enviar el nuevo avión al servidor
+    const formattedAirplane = {
+      ...newAirplane,
+      Año_Fabricacion: newAirplane.Año_Fabricacion ? new Date(newAirplane.Año_Fabricacion).toISOString().split('T')[0] : null,
+      Numero_Asientos: parseInt(newAirplane.Numero_Asientos),
+      Capacidad_Carga: parseFloat(newAirplane.Capacidad_Carga)
+    };
+    try {
+      await axios.post('http://localhost:8085/api/airplanes', formattedAirplane);
+      fetchAirplanes();
+      setNewAirplane({
+        Modelo: '',
+        Fabricante: '',
+        Año_Fabricacion: '',
+        Numero_Asientos: '',
+        Capacidad_Carga: '',
+        NIT_ContratistaFK: ''
+      });
+    } catch (error) {
+      console.error('Error al añadir el avion:', error.response ? error.response.data : error.message);
+    }
+  };
+
+  const handleEditAirplane = (airplane) => {
+    setEditingAirplane(airplane);
+  };
+
+  const handleUpdateAirplane = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`http://localhost:8085/api/airplanes/${editingAirplane.Id_Avion}`, editingAirplane);
+      fetchAirplanes();
+      setEditingAirplane(null);
+    } catch (error) {
+      console.error('Error al actualizar el avion:', error);
+    }
+  };
+
+  const handleDeleteAirplane = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8085/api/airplanes/${id}`);
+      fetchAirplanes();
+    } catch (error) {
+      console.error('Error al eliminar el avion:', error);
     }
   };
 
@@ -451,44 +512,85 @@ export default function AdminDashboard() {
                 <h1 className="admin-title">Administración de Aviones</h1>
               </header>
               <main className="admin-content">
-                <form onSubmit={handleAddAirplane} className="admin-form">
-                  <h2>Agregar Nuevo Avión</h2>
+                <form onSubmit={editingAirplane ? handleUpdateAirplane : handleAddAirplane} className="admin-form">
+                  <h2>{editingAirplane ? 'Editar Avión' : 'Agregar Nuevo Avión'}</h2>
                   <div className="form-group">
-                    <label htmlFor="model">Modelo:</label>
+                    <label htmlFor="Modelo">Modelo:</label>
                     <input
                       type="text"
-                      id="model"
-                      name="model"
-                      value={newAirplane.model}
-                      onChange={handleInputChangeAirplanes}
+                      id="Modelo"
+                      name="Modelo"
+                      value={editingAirplane ? editingAirplane.Modelo : newAirplane.Modelo}
+                      onChange={handleInputChangeAirplane}
                       required
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="capacity">Capacidad:</label>
+                    <label htmlFor="Fabricante">Fabricante:</label>
+                    <input
+                      type="text"
+                      id="Fabricante"
+                      name="Fabricante"
+                      value={editingAirplane ? editingAirplane.Fabricante : newAirplane.Fabricante}
+                      onChange={handleInputChangeAirplane}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="Año_Fabricacion">Año de Fabricación:</label>
+                    <input
+                      type="date"
+                      id="Año_Fabricacion"
+                      name="Año_Fabricacion"
+                      value={editingAirplane 
+                        ? (editingAirplane.Año_Fabricacion ? editingAirplane.Año_Fabricacion.split('T')[0] : '')
+                        : (newAirplane.Año_Fabricacion ? newAirplane.Año_Fabricacion.split('T')[0] : '')
+                      }
+                      onChange={handleInputChangeAirplane}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="Numero_Asientos">Número de Asientos:</label>
                     <input
                       type="number"
-                      id="capacity"
-                      name="capacity"
-                      value={newAirplane.capacity}
-                      onChange={handleInputChangeAirplanes}
+                      id="Numero_Asientos"
+                      name="Numero_Asientos"
+                      value={editingAirplane ? editingAirplane.Numero_Asientos : newAirplane.Numero_Asientos}
+                      onChange={handleInputChangeAirplane}
                       required
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="status">Estado:</label>
-                    <select
-                      id="status"
-                      name="status"
-                      value={newAirplane.status}
-                      onChange={handleInputChangeAirplanes}
-                    >
-                      <option value="Activo">Activo</option>
-                      <option value="En mantenimiento">En mantenimiento</option>
-                      <option value="Fuera de servicio">Fuera de servicio</option>
-                    </select>
+                    <label htmlFor="Capacidad_Carga">Capacidad de Carga:</label>
+                    <input
+                      type="number"
+                      id="Capacidad_Carga"
+                      name="Capacidad_Carga"
+                      value={editingAirplane ? editingAirplane.Capacidad_Carga : newAirplane.Capacidad_Carga}
+                      onChange={handleInputChangeAirplane}
+                      required
+                    />
                   </div>
-                  <button type="submit" className="btn">Agregar Avión</button>
+                  <div className="form-group">
+                    <label htmlFor="NIT_ContratistaFK">NIT Contratista:</label>
+                    <input
+                      type="number"
+                      id="NIT_ContratistaFK"
+                      name="NIT_ContratistaFK"
+                      value={editingAirplane ? editingAirplane.NIT_ContratistaFK : newAirplane.NIT_ContratistaFK}
+                      onChange={handleInputChangeAirplane}
+                      required
+                    />
+                  </div>
+                  <button type="submit" className="btn">
+                    {editingAirplane ? 'Actualizar Avión' : 'Agregar Avión'}
+                  </button>
+                  {editingAirplane && (
+                    <button type="button" className="btn" onClick={() => setEditingAirplane(null)}>
+                      Cancelar Edición
+                    </button>
+                  )}
                 </form>
                 <h2>Lista de Aviones</h2>
                 <table>
@@ -496,21 +598,27 @@ export default function AdminDashboard() {
                     <tr>
                       <th>ID</th>
                       <th>Modelo</th>
-                      <th>Capacidad</th>
-                      <th>Estado</th>
+                      <th>Fabricante</th>
+                      <th>Año de Fabricación</th>
+                      <th>Número de Asientos</th>
+                      <th>Capacidad de Carga</th>
+                      <th>NIT Contratista</th>
                       <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {airplanes.map(airplane => (
-                      <tr key={airplane.id}>
-                        <td>{airplane.id}</td>
-                        <td>{airplane.model}</td>
-                        <td>{airplane.capacity}</td>
-                        <td>{airplane.status}</td>
+                      <tr key={airplane.Id_Avion}>
+                        <td>{airplane.Id_Avion}</td>
+                        <td>{airplane.Modelo}</td>
+                        <td>{airplane.Fabricante}</td>
+                        <td>{airplane.Año_Fabricacion}</td>
+                        <td>{airplane.Numero_Asientos}</td>
+                        <td>{airplane.Capacidad_Carga}</td>
+                        <td>{airplane.NIT_ContratistaFK}</td>
                         <td>
-                          <button className="action-btn">Editar</button>
-                          <button className="action-btn">Eliminar</button>
+                          <button className="action-btn" onClick={() => handleEditAirplane(airplane)}>Editar</button>
+                          <button className="action-btn" onClick={() => handleDeleteAirplane(airplane.Id_Avion)}>Eliminar</button>
                         </td>
                       </tr>
                     ))}

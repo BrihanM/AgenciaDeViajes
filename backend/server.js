@@ -13,7 +13,7 @@ const dbConfig = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     server: process.env.DB_SERVER,
-    database: 'Proyecto',
+    database: 'AgenciaDeViajes',
     options: {
       trustServerCertificate: true // Change to true for local dev / self-signed certs
     }
@@ -198,6 +198,76 @@ app.put('/api/user/:correo', async (req, res) => {
   } catch (err) {
     console.error('Error al actualizar datos del usuario:', err);
     res.status(500).json({ error: 'Error al actualizar datos del usuario' });
+  }
+});
+
+//EndPoints CRUD para Aviones
+              /*Llamar la lista de aviones existentes ( C[R]UD Read - LEER)*/
+app.get('/api/airplanes', async (req, res) => {
+  try {
+    const result = await pool.request().query('SELECT * FROM Avion');
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener aviones:', err);
+    res.status(500).json({ error: 'Error al obtener aviones' });
+  }
+});
+
+              /*Crear un nuevo avión ( [C]RUD Create - CREAR)*/
+app.post('/api/airplanes', async (req, res) => {
+  const { Modelo, Fabricante, Año_Fabricacion, Numero_Asientos, Capacidad_Carga, NIT_ContratistaFK } = req.body;
+  try {
+    const result = await pool.request()
+      .input('Modelo', sql.VarChar, Modelo)
+      .input('Fabricante', sql.VarChar, Fabricante)
+      .input('Año_Fabricacion', sql.Date, Año_Fabricacion)
+      .input('Numero_Asientos', sql.Int, Numero_Asientos)
+      .input('Capacidad_Carga', sql.Float, Capacidad_Carga)
+      .input('NIT_ContratistaFK', sql.VarChar, NIT_ContratistaFK)
+      .query(`INSERT INTO Avion (Modelo, Fabricante, Año_Fabricacion, Numero_Asientos, Capacidad_Carga, NIT_Contratista) 
+              VALUES (@Modelo, @Fabricante, @Año_Fabricacion, @Numero_Asientos, @Capacidad_Carga, @NIT_ContratistaFK);
+              SELECT SCOPE_IDENTITY() AS Id_Avion;`);
+    res.status(201).json({ Id_Avion: result.recordset[0].Id_Avion, ...req.body });
+  } catch (err) {
+    console.error('Error al agregar avión:', err);
+    res.status(500).json({ error: 'Error al agregar avión', details: err.message });
+  }
+});
+
+              /*Actualizar un avión ( CR[U]D Update - ACTUALIZAR)*/
+app.put('/api/airplanes/:id', async (req, res) => {
+  const { id } = req.params;
+  const { Modelo, Fabricante, Año_Fabricacion, Numero_Asientos, Capacidad_Carga, NIT_ContratistaFK } = req.body;
+  try {
+    await pool.request()
+      .input('Id_Avion', sql.Int, id)
+      .input('Modelo', sql.VarChar, Modelo)
+      .input('Fabricante', sql.VarChar, Fabricante)
+      .input('Año_Fabricacion', sql.Int, Año_Fabricacion)
+      .input('Numero_Asientos', sql.Int, Numero_Asientos)
+      .input('Capacidad_Carga', sql.Float, Capacidad_Carga)
+      .input('NIT_ContratistaFK', sql.VarChar, NIT_ContratistaFK)
+      .query(`UPDATE Avion SET Modelo = @Modelo, Fabricante = @Fabricante, Año_Fabricacion = @Año_Fabricacion, 
+              Numero_Asientos = @Numero_Asientos, Capacidad_Carga = @Capacidad_Carga, NIT_Contratista = @NIT_ContratistaFK
+              WHERE Id_Avion = @Id_Avion`);
+    res.json({ message: 'Avión actualizado con éxito' });
+  } catch (err) {
+    console.error('Error al actualizar avión:', err);
+    res.status(500).json({ error: 'Error al actualizar avión' });
+  }
+});
+
+              /*Borrar un avión (CRU[D] Delete - ELIMINAR)*/
+app.delete('/api/airplanes/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.request()
+      .input('Id_Avion', sql.Int, id)
+      .query('DELETE FROM Avion WHERE Id_Avion = @Id_Avion');
+    res.json({ message: 'Avión eliminado con éxito' });
+  } catch (err) {
+    console.error('Error al eliminar avión:', err);
+    res.status(500).json({ error: 'Error al eliminar avión' });
   }
 });
 
