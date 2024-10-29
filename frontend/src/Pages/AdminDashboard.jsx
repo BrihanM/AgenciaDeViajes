@@ -8,9 +8,18 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ users: 0, trips: 0, revenue: 0, reservations: 0 });
   const [activeTab, setActiveTab] = useState('new-trip');
 
-  //Employees
+  //Employees - Empleados
   const [employees, setEmployees] = useState([]);
-  const [newEmployee, setNewEmployee] = useState({ name: '', position: '', email: '' });
+  const [newEmployee, setNewEmployee] = useState({
+    Cedula: '',
+    Tipo_Documento: '',
+    Primer_Nombre: '',
+    Segundo_Nombre: '',
+    Primer_Apellido: '',
+    Segundo_Apellido: '',
+    Fecha_Nacimiento: ''
+  });
+  const [editingEmployee, setEditingEmployee] = useState(null);
 
   //Airplanes
   const [airplanes, setAirplanes] = useState([]);
@@ -26,7 +35,14 @@ export default function AdminDashboard() {
 
   //Furniture
   const [furniture, setFurniture] = useState([]);
-  const [newFurniture, setNewFurniture] = useState({ name: '', location: '', condition: 'Bueno' });
+  const [newFurniture, setNewFurniture] = useState({
+    Id_CategoriaFK: '',
+    Sucursal_IdFK: '',
+    Fecha_Adquisicion: '',
+    Costo: '',
+    Cantidad: ''
+  });
+  const [editingFurniture, setEditingFurniture] = useState(null);
 
   //Locations of headquarters - Sedes
   const [locations, setLocations] = useState([]);
@@ -44,19 +60,17 @@ export default function AdminDashboard() {
     ]);
     setStats({ users: 1250, trips: 45, revenue: 150000, reservations: 890 });
     //Logica para Employees (Empleados)
-    setEmployees([
-      { id: 1, name: 'Juan Pérez', position: 'Piloto', email: 'juan@example.com' },
-      { id: 2, name: 'María López', position: 'Azafata', email: 'maria@example.com' },
-    ]);
+    if (activeTab === 'employees') {
+      fetchEmployees();
+    }
     //Airplanes (Aviones)
     if (activeTab === 'airplane') {
       fetchAirplanes();
     }
     //Furniture (Muebles)
-    setFurniture([
-      { id: 1, name: 'Silla de oficina', location: 'Oficina principal', condition: 'Bueno' },
-      { id: 2, name: 'Escritorio', location: 'Sala de reuniones', condition: 'Regular' },
-    ]);
+    if (activeTab === 'furniture') {
+      fetchFurniture();
+    }
     //Headquarters (Sedes)
     setLocations([
       { id: 1, name: 'Sede Principal', address: 'Calle 123, Bogotá', type: 'Oficina' },
@@ -94,16 +108,64 @@ export default function AdminDashboard() {
   };
 
   //Constantes usadas en Employees (Empleados)
-  const handleInputChange = (e) => {
-    setNewEmployee({ ...newEmployee, [e.target.name]: e.target.value });
+  const fetchEmployees = async () => {
+    try {
+      const response = await axios.get('http://localhost:8085/api/employees');
+      setEmployees(response.data);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
   };
 
-  const handleAddEmployee = (e) => {
+  const handleInputChangeEmployee = (e) => {
+    const { name, value } = e.target;
+    if (editingEmployee) {
+      setEditingEmployee({ ...editingEmployee, [name]: value });
+    } else {
+      setNewEmployee({ ...newEmployee, [name]: value });
+    }
+  };
+
+  const handleAddEmployee = async (e) => {
     e.preventDefault();
-    if (newEmployee.name && newEmployee.position && newEmployee.email) {
-      setEmployees([...employees, { ...newEmployee, id: Date.now() }]);
-      setNewEmployee({ name: '', position: '', email: '' });
-      // Aquí iría la lógica para enviar el nuevo empleado al servidor
+    try {
+      await axios.post('http://localhost:8085/api/employees', newEmployee);
+      fetchEmployees();
+      setNewEmployee({
+        Cedula: '',
+        Tipo_Documento: '',
+        Primer_Nombre: '',
+        Segundo_Nombre: '',
+        Primer_Apellido: '',
+        Segundo_Apellido: '',
+        Fecha_Nacimiento: ''
+      });
+    } catch (error) {
+      console.error('Error adding employee:', error);
+    }
+  };
+
+  const handleEditEmployee = (employee) => {
+    setEditingEmployee(employee);
+  };
+
+  const handleUpdateEmployee = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`http://localhost:8085/api/employees/${editingEmployee.Cedula}`, editingEmployee);
+      fetchEmployees();
+      setEditingEmployee(null);
+    } catch (error) {
+      console.error('Error updating employee:', error);
+    }
+  };
+
+  const handleDeleteEmployee = async (cedula) => {
+    try {
+      await axios.delete(`http://localhost:8085/api/employees/${cedula}`);
+      fetchEmployees();
+    } catch (error) {
+      console.error('Error deleting employee:', error);
     }
   };
 
@@ -175,16 +237,62 @@ export default function AdminDashboard() {
   };
 
   //Constantes usadas en Furniture
-  const handleInputChangeFurniture = (e) => {
-    setNewFurniture({ ...newFurniture, [e.target.name]: e.target.value });
+  const fetchFurniture = async () => {
+    try {
+      const response = await axios.get('http://localhost:8085/api/furniture');
+      setFurniture(response.data);
+    } catch (error) {
+      console.error('Error fetching furniture:', error);
+    }
   };
 
-  const handleAddFurniture = (e) => {
+  const handleInputChangeFurniture = (e) => {
+    const { name, value } = e.target;
+    if (editingFurniture) {
+      setEditingFurniture({ ...editingFurniture, [name]: value });
+    } else {
+      setNewFurniture({ ...newFurniture, [name]: value });
+    }
+  };
+
+  const handleAddFurniture = async (e) => {
     e.preventDefault();
-    if (newFurniture.name && newFurniture.location) {
-      setFurniture([...furniture, { ...newFurniture, id: Date.now() }]);
-      setNewFurniture({ name: '', location: '', condition: 'Bueno' });
-      // Aquí iría la lógica para enviar el nuevo mueble al servidor
+    try {
+      await axios.post('http://localhost:8085/api/furniture', newFurniture);
+      fetchFurniture();
+      setNewFurniture({
+        Id_CategoriaFK: '',
+        Sucursal_IdFK: '',
+        Fecha_Adquisicion: '',
+        Costo: '',
+        Cantidad: ''
+      });
+    } catch (error) {
+      console.error('Error adding furniture:', error);
+    }
+  };
+
+  const handleEditFurniture = (furniture) => {
+    setEditingFurniture(furniture);
+  };
+
+  const handleUpdateFurniture = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`http://localhost:8085/api/furniture/${editingFurniture.Id_Mueble}`, editingFurniture);
+      fetchFurniture();
+      setEditingFurniture(null);
+    } catch (error) {
+      console.error('Error updating furniture:', error);
+    }
+  };
+
+  const handleDeleteFurniture = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8085/api/furniture/${id}`);
+      fetchFurniture();
+    } catch (error) {
+      console.error('Error deleting furniture:', error);
     }
   };
 
@@ -432,77 +540,92 @@ export default function AdminDashboard() {
           )}
                                                   {/*Page Furniture - Muebles empresariales*/}
           {activeTab === 'furniture' && (
-              <div className="admin-container">
-              <header className="admin-header">
-                <h1 className="admin-title">Administración de Muebles</h1>
-              </header>
-              <main className="admin-content">
-                <form onSubmit={handleAddFurniture} className="admin-form">
-                  <h2>Agregar Nuevo Mueble</h2>
-                  <div className="form-group">
-                    <label htmlFor="name">Nombre:</label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={newFurniture.name}
-                      onChange={handleInputChangeFurniture}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="location">Ubicación:</label>
-                    <input
-                      type="text"
-                      id="location"
-                      name="location"
-                      value={newFurniture.location}
-                      onChange={handleInputChangeFurniture}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="condition">Estado:</label>
-                    <select
-                      id="condition"
-                      name="condition"
-                      value={newFurniture.condition}
-                      onChange={handleInputChangeFurniture}
-                    >
-                      <option value="Bueno">Bueno</option>
-                      <option value="Regular">Regular</option>
-                      <option value="Malo">Malo</option>
-                    </select>
-                  </div>
-                  <button type="submit" className="btn">Agregar Mueble</button>
-                </form>
-                <h2>Lista de Muebles</h2>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Nombre</th>
-                      <th>Ubicación</th>
-                      <th>Estado</th>
-                      <th>Acciones</th>
+              <div className="furniture-section">
+              <h2>Gestión de Muebles</h2>
+              <form onSubmit={editingFurniture ? handleUpdateFurniture : handleAddFurniture}>
+                <div className="form-group">
+                  <label>Categoría ID:</label>
+                  <input
+                    type="text"
+                    name="Id_CategoriaFK"
+                    value={editingFurniture ? editingFurniture.Id_CategoriaFK : newFurniture.Id_CategoriaFK}
+                    onChange={handleInputChangeFurniture}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Sucursal ID:</label>
+                  <input
+                    type="text"
+                    name="Sucursal_IdFK"
+                    value={editingFurniture ? editingFurniture.Sucursal_IdFK : newFurniture.Sucursal_IdFK}
+                    onChange={handleInputChangeFurniture}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Fecha de Adquisición:</label>
+                  <input
+                    type="date"
+                    name="Fecha_Adquisicion"
+                    value={editingFurniture ? editingFurniture.Fecha_Adquisicion : newFurniture.Fecha_Adquisicion}
+                    onChange={handleInputChangeFurniture}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Costo:</label>
+                  <input
+                    type="number"
+                    name="Costo"
+                    value={editingFurniture ? editingFurniture.Costo : newFurniture.Costo}
+                    onChange={handleInputChangeFurniture}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Cantidad:</label>
+                  <input
+                    type="number"
+                    name="Cantidad"
+                    value={editingFurniture ? editingFurniture.Cantidad : newFurniture.Cantidad}
+                    onChange={handleInputChangeFurniture}
+                    required
+                  />
+                </div>
+                <button type="submit">{editingFurniture ? 'Actualizar' : 'Agregar'} Mueble</button>
+              </form>
+          
+              <h3>Lista de Muebles</h3>
+              <table className='furniture-table'>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Categoría ID</th>
+                    <th>Sucursal ID</th>
+                    <th>Fecha de Adquisición</th>
+                    <th>Costo</th>
+                    <th>Cantidad</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {furniture.map(item => (
+                    <tr key={item.Id_Mueble}>
+                      <td>{item.Id_Mueble}</td>
+                      <td>{item.Id_CategoriaFK}</td>
+                      <td>{item.Sucursal_IdFK}</td>
+                      <td>{item.Fecha_Adquisicion}</td>
+                      <td>{item.Costo}</td>
+                      <td>{item.Cantidad}</td>
+                      <td>
+                        <button onClick={() => handleEditFurniture(item)}>Editar</button>
+                        <button onClick={() => handleDeleteFurniture(item.Id_Mueble)}>Eliminar</button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {furniture.map(item => (
-                      <tr key={item.id}>
-                        <td>{item.id}</td>
-                        <td>{item.name}</td>
-                        <td>{item.location}</td>
-                        <td>{item.condition}</td>
-                        <td>
-                          <button className="action-btn">Editar</button>
-                          <button className="action-btn">Eliminar</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </main>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
                                                   {/*Page Airplane - Aviones*/}
@@ -629,75 +752,99 @@ export default function AdminDashboard() {
           )}
                                                   {/*Page employees - Empleados*/}
             {activeTab === 'employees' && (
-              <div className="admin-container">
-              <header className="admin-header">
-                <h1 className="admin-title">Administración de Empleados</h1>
-              </header>
-              <main className="admin-content">
-                <form onSubmit={handleAddEmployee} className="admin-form">
-                  <h2>Agregar Nuevo Empleado</h2>
-                  <div className="form-group">
-                    <label htmlFor="name">Nombre:</label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={newEmployee.name}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="position">Cargo:</label>
-                    <input
-                      type="text"
-                      id="position"
-                      name="position"
-                      value={newEmployee.position}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="email">Correo electrónico:</label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={newEmployee.email}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <button type="submit" className="btn">Agregar Empleado</button>
-                </form>
-                <h2>Lista de Empleados</h2>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Nombre</th>
-                      <th>Cargo</th>
-                      <th>Correo electrónico</th>
-                      <th>Acciones</th>
+              <div className="employees-section">
+              <h2>Gestión de Empleados</h2>
+              <form onSubmit={editingEmployee ? handleUpdateEmployee : handleAddEmployee}>
+                <input
+                  type="text"
+                  name="Cedula"
+                  value={editingEmployee ? editingEmployee.Cedula : newEmployee.Cedula}
+                  onChange={handleInputChangeEmployee}
+                  placeholder="Cédula"
+                  required
+                />
+                <input
+                  type="text"
+                  name="Tipo_Documento"
+                  value={editingEmployee ? editingEmployee.Tipo_Documento : newEmployee.Tipo_Documento}
+                  onChange={handleInputChangeEmployee}
+                  placeholder="Tipo de Documento"
+                  required
+                />
+                <input
+                  type="text"
+                  name="Primer_Nombre"
+                  value={editingEmployee ? editingEmployee.Primer_Nombre : newEmployee.Primer_Nombre}
+                  onChange={handleInputChangeEmployee}
+                  placeholder="Primer Nombre"
+                  required
+                />
+                <input
+                  type="text"
+                  name="Segundo_Nombre"
+                  value={editingEmployee ? editingEmployee.Segundo_Nombre : newEmployee.Segundo_Nombre}
+                  onChange={handleInputChangeEmployee}
+                  placeholder="Segundo Nombre"
+                />
+                <input
+                  type="text"
+                  name="Primer_Apellido"
+                  value={editingEmployee ? editingEmployee.Primer_Apellido : newEmployee.Primer_Apellido}
+                  onChange={handleInputChangeEmployee}
+                  placeholder="Primer Apellido"
+                  required
+                />
+                <input
+                  type="text"
+                  name="Segundo_Apellido"
+                  value={editingEmployee ? editingEmployee.Segundo_Apellido : newEmployee.Segundo_Apellido}
+                  onChange={handleInputChangeEmployee}
+                  placeholder="Segundo Apellido"
+                />
+                <input
+                  type="date"
+                  name="Fecha_Nacimiento"
+                  value={editingEmployee ? editingEmployee.Fecha_Nacimiento : newEmployee.Fecha_Nacimiento}
+                  onChange={handleInputChangeEmployee}
+                  required
+                />
+                <button type="submit">{editingEmployee ? 'Actualizar Empleado' : 'Agregar Empleado'}</button>
+                {editingEmployee && (
+                  <button type="button" onClick={() => setEditingEmployee(null)}>Cancelar Edición</button>
+                )}
+              </form>
+          
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cédula</th>
+                    <th>Tipo de Documento</th>
+                    <th>Primer Nombre</th>
+                    <th>Segundo Nombre</th>
+                    <th>Primer Apellido</th>
+                    <th>Segundo Apellido</th>
+                    <th>Fecha de Nacimiento</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employees.map(employee => (
+                    <tr key={employee.Cedula}>
+                      <td>{employee.Cedula}</td>
+                      <td>{employee.Tipo_Documento}</td>
+                      <td>{employee.Primer_Nombre}</td>
+                      <td>{employee.Segundo_Nombre}</td>
+                      <td>{employee.Primer_Apellido}</td>
+                      <td>{employee.Segundo_Apellido}</td>
+                      <td>{new Date(employee.Fecha_Nacimiento).toLocaleDateString()}</td>
+                      <td>
+                        <button onClick={() => handleEditEmployee(employee)}>Editar</button>
+                        <button onClick={() => handleDeleteEmployee(employee.Cedula)}>Eliminar</button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {employees.map(employee => (
-                      <tr key={employee.id}>
-                        <td>{employee.id}</td>
-                        <td>{employee.name}</td>
-                        <td>{employee.position}</td>
-                        <td>{employee.email}</td>
-                        <td>
-                          <button className="action-btn">Editar</button>
-                          <button className="action-btn">Eliminar</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </main>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
                                                   {/*Page nuevo viaje - Viajes*/}

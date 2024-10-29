@@ -130,3 +130,65 @@
     background-color: #ef4444;
     color: #ffffff;
   }
+
+  /* Estilos para la sección de empleados */
+.employees-section {
+  margin-top: 20px;
+}
+
+.employees-section form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.employees-section input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.employees-section button {
+  background-color: #bc0606;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.employees-section button:hover {
+  background-color: #9f0101;
+}
+
+/* Estilos para la sección de muebles */
+.furniture-section {
+  margin-top: 20px;
+}
+
+.furniture-section form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.furniture-section input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.furniture-section button {
+  background-color: #bc0606;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.furniture-section button:hover {
+  background-color: #9f0101;
+}

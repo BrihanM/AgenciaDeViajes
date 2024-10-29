@@ -243,7 +243,7 @@ app.put('/api/airplanes/:id', async (req, res) => {
       .input('Id_Avion', sql.Int, id)
       .input('Modelo', sql.VarChar, Modelo)
       .input('Fabricante', sql.VarChar, Fabricante)
-      .input('Año_Fabricacion', sql.Int, Año_Fabricacion)
+      .input('Año_Fabricacion', sql.Date, Año_Fabricacion)
       .input('Numero_Asientos', sql.Int, Numero_Asientos)
       .input('Capacidad_Carga', sql.Float, Capacidad_Carga)
       .input('NIT_ContratistaFK', sql.VarChar, NIT_ContratistaFK)
@@ -272,7 +272,156 @@ app.delete('/api/airplanes/:id', async (req, res) => {
 });
 
 //EndPoints CRUD para Empleados
+                            // Obtener todos los empleados
+app.get('/api/employees', async (req, res) => {
+  try {
+    const result = await pool.request().query(`
+      SELECT [Cedula], [Tipo_Documento], [Primer_Nombre], [Segundo_Nombre], 
+             [Primer_Apellido], [Segundo_Apellido], [Fecha_Nacimiento]
+      FROM Empleado
+    `);
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener empleados:', err);
+    res.status(500).json({ error: 'Error al obtener empleados' });
+  }
+});
 
+                            // Crear un nuevo empleado
+app.post('/api/employees', async (req, res) => {
+  const { Cedula, Tipo_Documento, Primer_Nombre, Segundo_Nombre, Primer_Apellido, Segundo_Apellido, Fecha_Nacimiento } = req.body;
+  try {
+    const result = await pool.request()
+      .input('Cedula', sql.VarChar, Cedula)
+      .input('Tipo_Documento', sql.VarChar, Tipo_Documento)
+      .input('Primer_Nombre', sql.VarChar, Primer_Nombre)
+      .input('Segundo_Nombre', sql.VarChar, Segundo_Nombre)
+      .input('Primer_Apellido', sql.VarChar, Primer_Apellido)
+      .input('Segundo_Apellido', sql.VarChar, Segundo_Apellido)
+      .input('Fecha_Nacimiento', sql.Date, new Date(Fecha_Nacimiento))
+      .query(`
+        INSERT INTO Empleado (Cedula, Tipo_Documento, Primer_Nombre, Segundo_Nombre, Primer_Apellido, Segundo_Apellido, Fecha_Nacimiento)
+        VALUES (@Cedula, @Tipo_Documento, @Primer_Nombre, @Segundo_Nombre, @Primer_Apellido, @Segundo_Apellido, @Fecha_Nacimiento);
+      `);
+    res.status(201).json({ message: 'Empleado agregado con éxito', Cedula });
+  } catch (err) {
+    console.error('Error al agregar empleado:', err);
+    res.status(500).json({ error: 'Error al agregar empleado', details: err.message });
+  }
+});
+
+                            // Actualizar un empleado
+app.put('/api/employees/:cedula', async (req, res) => {
+  const { cedula } = req.params;
+  const { Tipo_Documento, Primer_Nombre, Segundo_Nombre, Primer_Apellido, Segundo_Apellido, Fecha_Nacimiento } = req.body;
+  try {
+    await pool.request()
+      .input('Cedula', sql.VarChar, cedula)
+      .input('Tipo_Documento', sql.VarChar, Tipo_Documento)
+      .input('Primer_Nombre', sql.VarChar, Primer_Nombre)
+      .input('Segundo_Nombre', sql.VarChar, Segundo_Nombre)
+      .input('Primer_Apellido', sql.VarChar, Primer_Apellido)
+      .input('Segundo_Apellido', sql.VarChar, Segundo_Apellido)
+      .input('Fecha_Nacimiento', sql.Date, new Date(Fecha_Nacimiento))
+      .query(`
+        UPDATE Empleado 
+        SET Tipo_Documento = @Tipo_Documento, 
+            Primer_Nombre = @Primer_Nombre, 
+            Segundo_Nombre = @Segundo_Nombre, 
+            Primer_Apellido = @Primer_Apellido, 
+            Segundo_Apellido = @Segundo_Apellido, 
+            Fecha_Nacimiento = @Fecha_Nacimiento
+        WHERE Cedula = @Cedula
+      `);
+    res.json({ message: 'Empleado actualizado con éxito' });
+  } catch (err) {
+    console.error('Error al actualizar empleado:', err);
+    res.status(500).json({ error: 'Error al actualizar empleado' });
+  }
+});
+
+                            // Eliminar un empleado
+app.delete('/api/employees/:cedula', async (req, res) => {
+  const { cedula } = req.params;
+  try {
+    await pool.request()
+      .input('Cedula', sql.VarChar, cedula)
+      .query('DELETE FROM Empleado WHERE Cedula = @Cedula');
+    res.json({ message: 'Empleado eliminado con éxito' });
+  } catch (err) {
+    console.error('Error al eliminar empleado:', err);
+    res.status(500).json({ error: 'Error al eliminar empleado' });
+  }
+});
+
+//EndPoints CRUD para Muebles
+// Obtener todos los muebles (READ)
+app.get('/api/furniture', async (req, res) => {
+  try {
+    const result = await pool.request()
+      .query('SELECT * FROM Mueble');
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener muebles:', err);
+    res.status(500).json({ error: 'Error al obtener muebles' });
+  }
+});
+
+// Crear un nuevo mueble (CREATE)
+app.post('/api/furniture', async (req, res) => {
+  const { Id_CategoriaFK, Sucursal_IdFK, Fecha_Adquisicion, Costo, Cantidad } = req.body;
+  try {
+    const result = await pool.request()
+      .input('Id_CategoriaFK', sql.Int, Id_CategoriaFK)
+      .input('Sucursal_IdFK', sql.Int, Sucursal_IdFK)
+      .input('Fecha_Adquisicion', sql.Date, Fecha_Adquisicion)
+      .input('Costo', sql.Decimal(10, 2), Costo)
+      .input('Cantidad', sql.Int, Cantidad)
+      .query(`INSERT INTO Mueble (Id_CategoriaFK, Sucursal_IdFK, Fecha_Adquisicion, Costo, Cantidad) 
+              VALUES (@Id_CategoriaFK, @Sucursal_IdFK, @Fecha_Adquisicion, @Costo, @Cantidad);
+              SELECT SCOPE_IDENTITY() AS Id_Mueble;`);
+    res.status(201).json({ Id_Mueble: result.recordset[0].Id_Mueble, ...req.body });
+  } catch (err) {
+    console.error('Error al agregar mueble:', err);
+    res.status(500).json({ error: 'Error al agregar mueble' });
+  }
+});
+
+// Actualizar un mueble (UPDATE)
+app.put('/api/furniture/:id', async (req, res) => {
+  const { id } = req.params;
+  const { Id_CategoriaFK, Sucursal_IdFK, Fecha_Adquisicion, Costo, Cantidad } = req.body;
+  try {
+    await pool.request()
+      .input('Id_Mueble', sql.Int, id)
+      .input('Id_CategoriaFK', sql.Int, Id_CategoriaFK)
+      .input('Sucursal_IdFK', sql.Int, Sucursal_IdFK)
+      .input('Fecha_Adquisicion', sql.Date, Fecha_Adquisicion)
+      .input('Costo', sql.Decimal(10, 2), Costo)
+      .input('Cantidad', sql.Int, Cantidad)
+      .query(`UPDATE Mueble SET Id_CategoriaFK = @Id_CategoriaFK, Sucursal_IdFK = @Sucursal_IdFK, 
+              Fecha_Adquisicion = @Fecha_Adquisicion, Costo = @Costo, Cantidad = @Cantidad 
+              WHERE Id_Mueble = @Id_Mueble`);
+    res.json({ message: 'Mueble actualizado con éxito' });
+  } catch (err) {
+    console.error('Error al actualizar mueble:', err);
+    res.status(500).json({ error: 'Error al actualizar mueble' });
+  }
+});
+
+// Eliminar un mueble (DELETE)
+app.delete('/api/furniture/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.request()
+      .input('Id_Mueble', sql.Int, id)
+      .query('DELETE FROM Mueble WHERE Id_Mueble = @Id_Mueble');
+    res.json({ message: 'Mueble eliminado con éxito' });
+  } catch (err) {
+    console.error('Error al eliminar mueble:', err);
+    res.status(500).json({ error: 'Error al eliminar mueble' });
+  }
+});
 
 // Start the server
 app.listen(port, () => {
