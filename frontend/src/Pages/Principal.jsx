@@ -1,5 +1,10 @@
 import React from 'react'
 import "../Css/Principal.css"
+import buscar from  '../Img/icons/buscar.png'
+import pasajeros from '../Img/icons/Pasajeros.png'
+import clase from '../Img/icons/clase.png'
+import destino from '../Img/icons/destino.png'
+import calendario from '../Img/icons/calendario.png'
 
 const Principal = () => {
     return (
@@ -12,12 +17,12 @@ const Principal = () => {
         <div className="flight-purchase">
           <div className="passenger-selection">
             <div className="input-group">
-              <img src="ruta/a/pasajero-icon.svg" alt="Pasajeros" className="small-logo" />
+              <img src={pasajeros} alt="Pasajeros" className="small-logo" />
               <label htmlFor="passengers">Pasajeros:</label>
               <input type="number" id="passengers" min="1" defaultValue="1" />
             </div>
             <div className="input-group">
-              <img src="ruta/a/clase-icon.svg" alt="Clase" className="small-logo" />
+              <img src={clase} alt="Clase" className="small-logo" />
               <label htmlFor="class">Clase:</label>
               <select id="class">
                 <option value="economica">Económica</option>
@@ -29,12 +34,12 @@ const Principal = () => {
           <div className="search-bar">
             <div className="location-selection">
               <div className="input-group">
-                <img src="ruta/a/origen-icon.svg" alt="Origen" className="small-logo" />
+                <img src={destino} alt="Origen" className="small-logo" />
                 <label htmlFor="origin">Origen:</label>
                 <input type="text" id="origin" placeholder="Ciudad o Aeropuerto" />
               </div>
               <div className="input-group">
-                <img src="ruta/a/destino-icon.svg" alt="Destino" className="small-logo" />
+                <img src={destino} alt="Destino" className="small-logo" />
                 <label htmlFor="destination">Destino:</label>
                 <input type="text" id="destination" placeholder="Ciudad o Aeropuerto" />
               </div>
@@ -42,12 +47,12 @@ const Principal = () => {
 
             <div className="date-selection">
               <div className="input-group">
-                <img src="ruta/a/calendario-icon.svg" alt="Ida" className="small-logo" />
+                <img src={calendario} alt="Ida" className="small-logo" />
                 <label htmlFor="departure">Ida:</label>
                 <input type="date" id="departure" />
               </div>
               <div className="input-group">
-                <img src="ruta/a/calendario-icon.svg" alt="Vuelta" className="small-logo" />
+                <img src={calendario} alt="Vuelta" className="small-logo" />
                 <label htmlFor="return">Vuelta:</label>
                 <input type="date" id="return" />
               </div>
@@ -55,7 +60,7 @@ const Principal = () => {
           </div>
 
           <button className="search-button">
-            <img src="ruta/a/lupa.svg" alt="Buscar" />
+            <img src={buscar} alt="Buscar" />
             Buscar vuelos
           </button>
         </div>

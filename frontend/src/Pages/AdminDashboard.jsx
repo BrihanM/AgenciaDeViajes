@@ -279,7 +279,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="tab-content">
-                                                            {/*Page Machinary - Lista de maquinaria*/}
+                                                  {/*Page Machinary - Lista de maquinaria*/}
           {activeTab === 'machinary' && (
               <div className="admin-container">
               <header className="admin-header">

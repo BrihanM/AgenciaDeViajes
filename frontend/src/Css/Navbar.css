@@ -1,49 +1,73 @@
 .navbar {
   background-color: #b70000;
-  padding: 1rem 2rem;
+  height: 60px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .navbar-brand {
-  color: #ffffff;
-  font-size: 1.5rem;
+  color: white;
+  font-size: 24px;
   font-weight: bold;
   text-decoration: none;
 }
 
+.navbar-nav {
+  display: flex;
+  flex-direction: row; /* Asegura que los elementos estén en línea horizontal */
+  align-items: center;
+  gap: 20px; /* Espacio uniforme entre elementos */
+}
+
 .nav-link {
-  color: #ffffff;
-  margin-left: 1.5rem;
+  color: white;
   text-decoration: none;
-  transition: color 0.3s ease;
+  font-size: 16px;
+  padding: 8px 12px;
+  transition: all 0.3s ease;
 }
 
 .nav-link:hover {
-  color: #64b5f6;
+  color: #ffcccc;
 }
 
-.navbar-toggler {
+.logout-button {
+  background-color: white;
+  color: #b70000;
   border: none;
-  background-color: transparent;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
 }
 
-.navbar-toggler-icon {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.7)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+.logout-button:hover {
+  background-color: #ffcccc;
 }
 
-.navbar-nav {
-  align-items: center;
-}
-
+/* Responsive design */
 @media (max-width: 768px) {
   .navbar-nav {
-    background-color: #1a237e;
-    padding: 1rem;
-    border-radius: 0 0 0.5rem 0.5rem;
+    display: none;
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background-color: #b70000;
+    width: 100%;
+    flex-direction: column;
+    padding: 20px;
   }
 
-  .nav-link {
-    padding: 0.5rem 0;
-    margin-left: 0;
+  .navbar-nav.show {
+    display: flex;
+  }
+
+  .navbar-toggler {
+    display: block;
   }
 }

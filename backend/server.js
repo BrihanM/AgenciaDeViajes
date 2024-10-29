@@ -224,7 +224,7 @@ app.post('/api/airplanes', async (req, res) => {
       .input('Numero_Asientos', sql.Int, Numero_Asientos)
       .input('Capacidad_Carga', sql.Float, Capacidad_Carga)
       .input('NIT_ContratistaFK', sql.VarChar, NIT_ContratistaFK)
-      .query(`INSERT INTO Avion (Modelo, Fabricante, Año_Fabricacion, Numero_Asientos, Capacidad_Carga, NIT_Contratista) 
+      .query(`INSERT INTO Avion (Modelo, Fabricante, Año_Fabricacion, Numero_Asientos, Capacidad_Carga, NIT_ContratistaFK) 
               VALUES (@Modelo, @Fabricante, @Año_Fabricacion, @Numero_Asientos, @Capacidad_Carga, @NIT_ContratistaFK);
               SELECT SCOPE_IDENTITY() AS Id_Avion;`);
     res.status(201).json({ Id_Avion: result.recordset[0].Id_Avion, ...req.body });
@@ -248,7 +248,7 @@ app.put('/api/airplanes/:id', async (req, res) => {
       .input('Capacidad_Carga', sql.Float, Capacidad_Carga)
       .input('NIT_ContratistaFK', sql.VarChar, NIT_ContratistaFK)
       .query(`UPDATE Avion SET Modelo = @Modelo, Fabricante = @Fabricante, Año_Fabricacion = @Año_Fabricacion, 
-              Numero_Asientos = @Numero_Asientos, Capacidad_Carga = @Capacidad_Carga, NIT_Contratista = @NIT_ContratistaFK
+              Numero_Asientos = @Numero_Asientos, Capacidad_Carga = @Capacidad_Carga, NIT_ContratistaFK = @NIT_ContratistaFK
               WHERE Id_Avion = @Id_Avion`);
     res.json({ message: 'Avión actualizado con éxito' });
   } catch (err) {
@@ -270,6 +270,9 @@ app.delete('/api/airplanes/:id', async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar avión' });
   }
 });
+
+//EndPoints CRUD para Empleados
+
 
 // Start the server
 app.listen(port, () => {
