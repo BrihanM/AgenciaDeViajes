@@ -55,17 +55,42 @@ export default function AdminDashboard() {
   const [editingFurniture, setEditingFurniture] = useState(null);
 
   //Locations of headquarters - Sedes
-  const [locations, setLocations] = useState([]);
-  const [newLocation, setNewLocation] = useState({
-    name: "",
-    address: "",
-    type: "Oficina",
+  const [branches, setBranches] = useState([]);
+  const [newBranch, setNewBranch] = useState({
+    EmpresaNITFK: "",
+    Nombre: "",
+    Direccion: "",
+    Telefono: "",
+    Correo: "",
   });
+  const [empresas, setEmpresas] = useState([]);
+  const [editingBranch, setEditingBranch] = useState(null);
+
+  const fetchBranches = async () => {
+    try {
+      const response = await axios.get("http://localhost:8085/api/branches");
+      setBranches(response.data);
+    } catch (error) {
+      console.error("Error fetching branches:", error);
+    }
+  };
+
+  const fetchEmpresas = async () => {
+    try {
+      const response = await fetch("http://localhost:8085/api/empresas");
+      if (!response.ok) {
+        throw new Error("Error al cargar las empresas");
+      }
+      const data = await response.json();
+      setEmpresas(data);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   //Machinary
   const [devices, setDevices] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [branches, setBranches] = useState([]);
   const [newDevice, setNewDevice] = useState({
     Id_CategoriaFK: "",
     Sucursal_IdFK: "",
@@ -112,22 +137,17 @@ export default function AdminDashboard() {
     //Furniture (Muebles)
     if (activeTab === "furniture") {
       fetchFurniture();
+      fetchCategories();
+      fetchBranches();
     }
     //Headquarters (Sedes)
-    setLocations([
-      {
-        id: 1,
-        name: "Sede Principal",
-        address: "Calle 123, Bogotá",
-        type: "Oficina",
-      },
-      {
-        id: 2,
-        name: "Aeropuerto El Dorado",
-        address: "Aeropuerto Internacional El Dorado, Bogotá",
-        type: "Aeropuerto",
-      },
-    ]);
+    if (activeTab === "location") {
+      fetchBranches();
+    }
+
+    if (activeTab === "location") {
+      fetchEmpresas();
+    }
     //Machinary (Maquinaria)
     if (activeTab === "machinary") {
       fetchDevices();
@@ -136,6 +156,7 @@ export default function AdminDashboard() {
     }
   }, [activeTab]);
 
+  //----------------------------------------------------------------------
   const handleNewTripChange = (e) => {
     const { name, value } = e.target;
     setNewTrip((prevTrip) => ({
@@ -313,6 +334,17 @@ export default function AdminDashboard() {
       setFurniture(response.data);
     } catch (error) {
       console.error("Error fetching furniture:", error);
+      if (error.response) {
+        // El servidor respondió con un estado de error
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+      } else if (error.request) {
+        // La solicitud se hizo pero no se recibió respuesta
+        console.error("No response received:", error.request);
+      } else {
+        // Algo sucedió al configurar la solicitud que desencadenó un error
+        console.error("Error setting up request:", error.message);
+      }
     }
   };
 
@@ -342,8 +374,16 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleEditFurniture = (furniture) => {
-    setEditingFurniture(furniture);
+  const handleEditFurniture = (item) => {
+    const formattedItem = {
+      ...item,
+      Fecha_Adquisicion: item.Fecha_Adquisicion
+        ? item.Fecha_Adquisicion.split("T")[0]
+        : "",
+      Categoria_IdFK: Number(item.Categoria_IdFK),
+      Sucursal_IdFK: Number(item.Sucursal_IdFK),
+    };
+    setEditingFurniture(formattedItem);
   };
 
   const handleUpdateFurniture = async (e) => {
@@ -360,6 +400,10 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleCancelEdit = () => {
+    setEditingFurniture(null);
+  };
+
   const handleDeleteFurniture = async (id) => {
     try {
       await axios.delete(`http://localhost:8085/api/furniture/${id}`);
@@ -370,19 +414,63 @@ export default function AdminDashboard() {
   };
 
   //Constantes usadas en Location (Sedes)
-  const handleInputChangeLocation = (e) => {
-    setNewLocation({ ...newLocation, [e.target.name]: e.target.value });
-  };
 
-  const handleAddLocation = (e) => {
-    e.preventDefault();
-    if (newLocation.name && newLocation.address) {
-      setLocations([...locations, { ...newLocation, id: Date.now() }]);
-      setNewLocation({ name: "", address: "", type: "Oficina" });
-      // Aquí iría la lógica para enviar la nueva sede al servidor
+  const handleBranchInputChange = (e) => {
+    const { name, value } = e.target;
+    if (editingBranch) {
+      setEditingBranch({ ...editingBranch, [name]: value });
+    } else {
+      setNewBranch({ ...newBranch, [name]: value });
     }
   };
 
+  const handleAddBranch = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingBranch) {
+        // Actualizar sede existente
+        const response = await axios.put(
+          `http://localhost:8085/api/branches/${editingBranch.Id_Sede}`,
+          editingBranch
+        );
+        const updatedBranch = response.data;
+        setBranches(
+          branches.map((branch) =>
+            branch.Id_Sede === updatedBranch.Id_Sede ? updatedBranch : branch
+          )
+        );
+        setEditingBranch(null);
+      } else {
+        // Agregar nueva sede
+        const response = await axios.post(
+          "http://localhost:8085/api/branches",
+          newBranch
+        );
+        const addedBranch = response.data;
+        setBranches([...branches, addedBranch]);
+      }
+      setNewBranch({
+        EmpresaNITFK: "",
+        Nombre: "",
+        Direccion: "",
+        Telefono: "",
+        Correo: "",
+      });
+      // Añade esta línea para actualizar la lista de sedes
+      fetchBranches();
+    } catch (error) {
+      console.error("Error al agregar/actualizar sede:", error);
+    }
+  };
+
+  const handleDeleteBranch = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8085/api/branches/${id}`);
+      fetchBranches();
+    } catch (error) {
+      console.error("Error al eliminar sede:", error);
+    }
+  };
   //Constantes de machinary (Maquinaria)
   const fetchDevices = async () => {
     try {
@@ -399,15 +487,6 @@ export default function AdminDashboard() {
       setCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
-    }
-  };
-
-  const fetchBranches = async () => {
-    try {
-      const response = await axios.get("http://localhost:8085/api/branches");
-      setBranches(response.data);
-    } catch (error) {
-      console.error("Error fetching branches:", error);
     }
   };
 
@@ -680,81 +759,113 @@ export default function AdminDashboard() {
           )}
           {/*Page Locations - Lista de sedes*/}
           {activeTab === "location" && (
-            <div className="admin-container">
-              <header className="admin-header">
-                <h1 className="admin-title">Administración de Sedes</h1>
-              </header>
-              <main className="admin-content">
-                <form onSubmit={handleAddLocation} className="admin-form">
-                  <h2>Agregar Nueva Sede</h2>
-                  <div className="form-group">
-                    <label htmlFor="name">Nombre:</label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={newLocation.name}
-                      onChange={handleInputChangeLocation}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="address">Dirección:</label>
-                    <input
-                      type="text"
-                      id="address"
-                      name="address"
-                      value={newLocation.address}
-                      onChange={handleInputChangeLocation}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="type">Tipo:</label>
-                    <select
-                      id="type"
-                      name="type"
-                      value={newLocation.type}
-                      onChange={handleInputChangeLocation}
-                    >
-                      <option value="Oficina">Oficina</option>
-                      <option value="Aeropuerto">Aeropuerto</option>
-                      <option value="Centro de mantenimiento">
-                        Centro de mantenimiento
-                      </option>
-                    </select>
-                  </div>
-                  <button type="submit" className="btn">
-                    Agregar Sede
+            <div className="branches-section">
+              <h2>Gestión de Sedes</h2>
+              <form onSubmit={handleAddBranch}>
+                <select
+                  name="EmpresaNITFK"
+                  value={
+                    editingBranch
+                      ? editingBranch.EmpresaNITFK
+                      : newBranch.EmpresaNITFK
+                  }
+                  onChange={handleBranchInputChange}
+                  required
+                >
+                  <option value="">Seleccione una empresa</option>
+                  {empresas.map((empresa) => (
+                    <option key={empresa.NIT} value={empresa.NIT}>
+                      {empresa.Nombre} - NIT: {empresa.NIT}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  name="Nombre"
+                  value={
+                    editingBranch ? editingBranch.Nombre : newBranch.Nombre
+                  }
+                  onChange={handleBranchInputChange}
+                  placeholder="Nombre de la Sede"
+                  required
+                />
+                <input
+                  type="text"
+                  name="Direccion"
+                  value={
+                    editingBranch
+                      ? editingBranch.Direccion
+                      : newBranch.Direccion
+                  }
+                  onChange={handleBranchInputChange}
+                  placeholder="Dirección"
+                  required
+                />
+                <input
+                  type="text"
+                  name="Telefono"
+                  value={
+                    editingBranch ? editingBranch.Telefono : newBranch.Telefono
+                  }
+                  onChange={handleBranchInputChange}
+                  placeholder="Teléfono"
+                  required
+                />
+                <input
+                  type="email"
+                  name="Correo"
+                  value={
+                    editingBranch ? editingBranch.Correo : newBranch.Correo
+                  }
+                  onChange={handleBranchInputChange}
+                  placeholder="Correo"
+                  required
+                />
+                <button type="submit">
+                  {editingBranch ? "Actualizar Sede" : "Agregar Sede"}
+                </button>
+                {editingBranch && (
+                  <button type="button" onClick={() => setEditingBranch(null)}>
+                    Cancelar Edición
                   </button>
-                </form>
-                <h2>Lista de Sedes</h2>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Nombre</th>
-                      <th>Dirección</th>
-                      <th>Tipo</th>
-                      <th>Acciones</th>
+                )}
+              </form>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>NIT Empresa</th>
+                    <th>Nombre</th>
+                    <th>Dirección</th>
+                    <th>Teléfono</th>
+                    <th>Correo</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {branches.map((branch) => (
+                    <tr key={branch.Id_Sede}>
+                      <td>{branch.Id_Sede}</td>
+                      <td>{branch.EmpresaNITFK}</td>
+                      <td>{branch.Nombre}</td>
+                      <td>{branch.Direccion}</td>
+                      <td>{branch.Telefono}</td>
+                      <td>{branch.Correo}</td>
+                      <td>
+                        <button onClick={() => setEditingBranch(branch)}>
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBranch(branch.Id_Sede)}
+                        >
+                          Eliminar
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {locations.map((location) => (
-                      <tr key={location.id}>
-                        <td>{location.id}</td>
-                        <td>{location.name}</td>
-                        <td>{location.address}</td>
-                        <td>{location.type}</td>
-                        <td>
-                          <button className="action-btn">Editar</button>
-                          <button className="action-btn">Eliminar</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </main>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
           {/*Page Furniture - Muebles empresariales*/}
@@ -767,23 +878,31 @@ export default function AdminDashboard() {
                 }
               >
                 <div className="form-group">
-                  <label>Categoría ID:</label>
-                  <input
-                    type="text"
+                  <label>Categoría:</label>
+                  <select
                     name="Id_CategoriaFK"
                     value={
-                      editingFurniture
-                        ? editingFurniture.Id_CategoriaFK
-                        : newFurniture.Id_CategoriaFK
+                      editingDevice
+                        ? editingDevice.Id_CategoriaFK
+                        : newDevice.Id_CategoriaFK
                     }
-                    onChange={handleInputChangeFurniture}
+                    onChange={handleInputChange}
                     required
-                  />
+                  >
+                    <option value="">Seleccione una categoría</option>
+                    {categories.map((category) => (
+                      <option
+                        key={category.Id_Categoria}
+                        value={category.Id_Categoria}
+                      >
+                        {category.Nombre}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
-                  <label>Sucursal ID:</label>
-                  <input
-                    type="text"
+                  <label>Sucursal:</label>
+                  <select
                     name="Sucursal_IdFK"
                     value={
                       editingFurniture
@@ -792,7 +911,17 @@ export default function AdminDashboard() {
                     }
                     onChange={handleInputChangeFurniture}
                     required
-                  />
+                  >
+                    <option value="">Seleccione una sucursal</option>
+                    {branches.map((branch) => (
+                      <option
+                        key={branch.Sucursal_Id}
+                        value={branch.Sucursal_Id}
+                      >
+                        {branch.Nombre}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="form-group">
                   <label>Fecha de Adquisición:</label>
@@ -839,6 +968,14 @@ export default function AdminDashboard() {
                 <button type="submit">
                   {editingFurniture ? "Actualizar" : "Agregar"} Mueble
                 </button>
+                {editingFurniture && (
+                  <button
+                    type="button"
+                    onClick={() => setEditingFurniture(null)}
+                  >
+                    Cancelar Edición
+                  </button>
+                )}
               </form>
 
               <h3>Lista de Muebles</h3>
@@ -846,8 +983,8 @@ export default function AdminDashboard() {
                 <thead>
                   <tr>
                     <th>ID</th>
-                    <th>Categoría ID</th>
-                    <th>Sucursal ID</th>
+                    <th>Categoría</th>
+                    <th>Sucursal</th>
                     <th>Fecha de Adquisición</th>
                     <th>Costo</th>
                     <th>Cantidad</th>
@@ -858,9 +995,11 @@ export default function AdminDashboard() {
                   {furniture.map((item) => (
                     <tr key={item.Id_Mueble}>
                       <td>{item.Id_Mueble}</td>
-                      <td>{item.Id_CategoriaFK}</td>
-                      <td>{item.Sucursal_IdFK}</td>
-                      <td>{item.Fecha_Adquisicion}</td>
+                      <td>{item.Nombre_Categoria}</td>
+                      <td>{item.Nombre_Sucursal}</td>
+                      <td>
+                        {new Date(item.Fecha_Adquisicion).toLocaleDateString()}
+                      </td>
                       <td>{item.Costo}</td>
                       <td>{item.Cantidad}</td>
                       <td>

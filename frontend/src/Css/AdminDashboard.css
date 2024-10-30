@@ -223,3 +223,33 @@
 .machinary-section button:hover {
   background-color: #9f0101;
 }
+/* Estilos para la sección de sedes */
+.branches-section {
+  margin-top: 20px;
+}
+
+.branches-section form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.branches-section input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.branches-section button {
+  background-color: #bc0606;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.branches-section button:hover {
+  background-color: #9f0101;
+}

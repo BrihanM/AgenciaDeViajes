@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const sql = require('mssql');
 const dotenv = require('dotenv');
+const ExcelJS = require('exceljs');
 
 dotenv.config();
 
@@ -38,7 +39,40 @@ async function connectToDatabase() {
 
   connectToDatabase();
 //--------------------------------------------------------------------------------
+//Tabla nómina para descargar en formato Excel
+app.get('/api/download-nomina', async (req, res) => {
+  try {
+    // Conectar a la base de datos y obtener los datos de la tabla Nomina
+    await sql.connect(config);
+    const result = await sql.query`SELECT * FROM Nomina`;
 
+    // Crear un nuevo libro de trabajo Excel
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Nomina');
+
+    // Añadir encabezados
+    worksheet.columns = Object.keys(result.recordset[0]).map(key => ({
+      header: key,
+      key: key,
+      width: 20
+    }));
+
+    // Añadir filas
+    worksheet.addRows(result.recordset);
+
+    // Configurar la respuesta
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=Nomina.xlsx');
+
+    // Enviar el archivo Excel
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error al generar el archivo Excel');
+  }
+});
 /*
   Se define una ruta POST para /api/login
   Extrae username y password del cuerpo de la petición
@@ -354,16 +388,28 @@ app.delete('/api/employees/:cedula', async (req, res) => {
   }
 });
 
-//EndPoints CRUD para Muebles
+                                      //EndPoints CRUD para Muebles
 // Obtener todos los muebles (READ)
 app.get('/api/furniture', async (req, res) => {
   try {
-    const result = await pool.request()
-      .query('SELECT * FROM Mueble');
+    const result = await pool.request().query(`
+      SELECT 
+        m.Id_Mueble,
+        m.Id_CategoriaFK,
+        m.Sucursal_IdFK,
+        m.Fecha_Adquisicion,
+        m.Costo,
+        m.Cantidad,
+        c.Nombre AS Nombre_Categoria,
+        s.Nombre AS Nombre_Sucursal
+      FROM Mueble m
+      LEFT JOIN Categorias c ON m.Id_CategoriaFK = c.Id_Categoria
+      LEFT JOIN Sede s ON m.Sucursal_IdFK = s.Id_Sede
+    `);
     res.json(result.recordset);
   } catch (err) {
     console.error('Error al obtener muebles:', err);
-    res.status(500).json({ error: 'Error al obtener muebles' });
+    res.status(500).json({ error: 'Error al obtener muebles', details: err.message });
   }
 });
 
@@ -423,8 +469,7 @@ app.delete('/api/furniture/:id', async (req, res) => {
   }
 });
 
-//Endpoints para Dispositivos
-// Get all devices
+                                //Endpoints para Dispositivos
 // Endpoint para obtener dispositivos
 app.get('/api/devices', async (req, res) => {
   try {
@@ -449,19 +494,7 @@ app.get('/api/categories', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener categorías', details: err.message });
   }
 });
-//Endpoint de sede
-app.get('/api/branches', async (req, res) => {
-  try {
-    const result = await pool.request().query('SELECT * FROM Sede');
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ message: 'No se encontraron sucursales' });
-    }
-    res.json(result.recordset);
-  } catch (err) {
-    console.error('Error al obtener sucursales:', err);
-    res.status(500).json({ error: 'Error al obtener sucursales', details: err.message });
-  }
-});
+
 app.get('/api/devices', async (req, res) => {
   try {
     const result = await pool.request().query(`
@@ -551,6 +584,141 @@ app.delete('/api/devices/:id', async (req, res) => {
   } catch (err) {
     console.error('Error al eliminar dispositivo:', err);
     res.status(500).json({ error: 'Error al eliminar dispositivo', details: err.message });
+  }
+});
+
+// EndPoints CRUD para Sedes
+//Endpoint de sede
+app.get('/api/branches', async (req, res) => {
+  try {
+    const result = await pool.request().query('SELECT * FROM Sede');
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron sucursales' });
+    }
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener sucursales:', err);
+    res.status(500).json({ error: 'Error al obtener sucursales', details: err.message });
+  }
+});
+
+// Obtener todas las sedes
+app.get('/api/branches', async (req, res) => {
+  try {
+    const result = await pool.request().query('SELECT * FROM Sede');
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener sedes:', err);
+    res.status(500).json({ error: 'Error al obtener sedes' });
+  }
+});
+
+// Crear una nueva sede
+app.post('/api/branches', async (req, res) => {
+  const { EmpresaNITFK, Nombre, Direccion, Telefono, Correo } = req.body;
+  try {
+    const result = await pool.request()
+      .input('EmpresaNITFK', sql.VarChar, EmpresaNITFK)
+      .input('Nombre', sql.VarChar, Nombre)
+      .input('Direccion', sql.VarChar, Direccion)
+      .input('Telefono', sql.VarChar, Telefono)
+      .input('Correo', sql.VarChar, Correo)
+      .query(`
+        INSERT INTO Sede (EmpresaNITFK, Nombre, Direccion, Telefono, Correo)
+        VALUES (@EmpresaNITFK, @Nombre, @Direccion, @Telefono, @Correo);
+        SELECT SCOPE_IDENTITY() AS Id_Sede;
+      `);
+    res.status(201).json({ Id_Sede: result.recordset[0].Id_Sede, ...req.body });
+  } catch (err) {
+    console.error('Error al agregar sede:', err);
+    res.status(500).json({ error: 'Error al agregar sede', details: err.message });
+  }
+});
+
+// Actualizar una sede
+app.put('/api/branches/:id', async (req, res) => {
+  const { id } = req.params;
+  const { EmpresaNITFK, Nombre, Direccion, Telefono, Correo } = req.body;
+  
+  console.log('Updating branch with id:', id);
+  console.log('Update data:', req.body);
+
+  // Validar que al menos un campo no esté vacío
+  if (!EmpresaNITFK && !Nombre && !Direccion && !Telefono && !Correo) {
+    return res.status(400).json({ error: 'Al menos un campo debe ser proporcionado para la actualización' });
+  }
+
+  try {
+    let query = 'UPDATE Sede SET ';
+    const inputs = [];
+
+    if (EmpresaNITFK) {
+      query += 'EmpresaNITFK = @EmpresaNITFK, ';
+      inputs.push({ name: 'EmpresaNITFK', type: sql.VarChar, value: EmpresaNITFK });
+    }
+    if (Nombre) {
+      query += 'Nombre = @Nombre, ';
+      inputs.push({ name: 'Nombre', type: sql.VarChar, value: Nombre });
+    }
+    if (Direccion) {
+      query += 'Direccion = @Direccion, ';
+      inputs.push({ name: 'Direccion', type: sql.VarChar, value: Direccion });
+    }
+    if (Telefono) {
+      query += 'Telefono = @Telefono, ';
+      inputs.push({ name: 'Telefono', type: sql.VarChar, value: Telefono });
+    }
+    if (Correo) {
+      query += 'Correo = @Correo, ';
+      inputs.push({ name: 'Correo', type: sql.VarChar, value: Correo });
+    }
+
+    // Remover la última coma y espacio
+    query = query.slice(0, -2);
+
+    query += ' WHERE Id_Sede = @Id_Sede; SELECT @@ROWCOUNT AS AffectedRows;';
+
+    const request = pool.request();
+    request.input('Id_Sede', sql.Int, parseInt(id));
+    inputs.forEach(input => request.input(input.name, input.type, input.value));
+
+    const result = await request.query(query);
+    
+    console.log('Update result:', result);
+
+    if (result.recordset[0].AffectedRows === 0) {
+      return res.status(404).json({ message: 'Sede no encontrada' });
+    }
+
+    res.json({ message: 'Sede actualizada con éxito' });
+  } catch (err) {
+    console.error('Error al actualizar sede:', err);
+    res.status(500).json({ error: 'Error al actualizar sede', details: err.message });
+  }
+});
+
+// Eliminar una sede
+app.delete('/api/branches/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.request()
+      .input('Id_Sede', sql.Int, id)
+      .query('DELETE FROM Sede WHERE Id_Sede = @Id_Sede');
+    res.json({ message: 'Sede eliminada con éxito' });
+  } catch (err) {
+    console.error('Error al eliminar sede:', err);
+    res.status(500).json({ error: 'Error al eliminar sede' });
+  }
+});
+
+//Cargar empresas desde la base de datos
+app.get('/api/empresas', async (req, res) => {
+  try {
+    const result = await pool.request().query('SELECT NIT, Nombre FROM Empresa');
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener empresas:', err);
+    res.status(500).json({ error: 'Error al obtener empresas' });
   }
 });
 
