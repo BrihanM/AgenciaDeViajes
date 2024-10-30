@@ -43,8 +43,24 @@ async function connectToDatabase() {
 app.get('/api/download-nomina', async (req, res) => {
   try {
     // Conectar a la base de datos y obtener los datos de la tabla Nomina
-    await sql.connect(config);
-    const result = await sql.query`SELECT * FROM Nomina`;
+    await sql.connect(dbConfig);
+    const result = await sql.query`SELECT 
+        e.Tipo_Documento,
+        e.Cedula,
+        e.Primer_Nombre,
+        e.Segundo_Nombre,
+        e.Primer_Apellido,
+        e.Segundo_Apellido,
+        e.Fecha_Nacimiento,
+        n.Cod_Nomina,
+        n.Fecha_Inicio_Corte,
+        n.Fecha_Fin_Corte,
+        n.Salario_Mensual
+      FROM 
+        Nomina n
+      INNER JOIN 
+        Empleado e ON n.CedulaFK = e.Cedula
+    `;
 
     // Crear un nuevo libro de trabajo Excel
     const workbook = new ExcelJS.Workbook();
@@ -73,6 +89,7 @@ app.get('/api/download-nomina', async (req, res) => {
     res.status(500).send('Error al generar el archivo Excel');
   }
 });
+
 /*
   Se define una ruta POST para /api/login
   Extrae username y password del cuerpo de la petición

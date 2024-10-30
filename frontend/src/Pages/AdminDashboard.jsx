@@ -3,6 +3,32 @@ import axios from "axios";
 import "../Css/AdminDashboard.css";
 
 export default function AdminDashboard() {
+  //Exportar a Excel
+  const handleDownloadNomina = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:8085/api/download-nomina",
+        {
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "Nomina.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Error downloading Nomina:", error);
+      alert(
+        "Hubo un error al descargar la nómina. Por favor, inténtelo de nuevo."
+      );
+    }
+  };
+
+  //Trip - Viaje
   const [newTrip, setNewTrip] = useState({
     id: 0,
     name: "",
@@ -1290,7 +1316,7 @@ export default function AdminDashboard() {
                   </button>
                 )}
               </form>
-
+              <button onClick={handleDownloadNomina}>Descargar Nómina</button>
               <table>
                 <thead>
                   <tr>
