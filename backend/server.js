@@ -423,6 +423,137 @@ app.delete('/api/furniture/:id', async (req, res) => {
   }
 });
 
+//Endpoints para Dispositivos
+// Get all devices
+// Endpoint para obtener dispositivos
+app.get('/api/devices', async (req, res) => {
+  try {
+    const result = await pool.request().query('SELECT * FROM Dispositivos');
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener dispositivos:', err);
+    res.status(500).json({ error: 'Error al obtener dispositivos' });
+  }
+});
+
+// Endpoint para obtener categorías
+app.get('/api/categories', async (req, res) => {
+  try {
+    const result = await pool.request().query('SELECT * FROM Categorias');
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron categorías' });
+    }
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener categorías:', err);
+    res.status(500).json({ error: 'Error al obtener categorías', details: err.message });
+  }
+});
+//Endpoint de sede
+app.get('/api/branches', async (req, res) => {
+  try {
+    const result = await pool.request().query('SELECT * FROM Sede');
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron sucursales' });
+    }
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener sucursales:', err);
+    res.status(500).json({ error: 'Error al obtener sucursales', details: err.message });
+  }
+});
+app.get('/api/devices', async (req, res) => {
+  try {
+    const result = await pool.request().query(`
+      SELECT 
+        d.Id_Dispositivo,
+        d.Id_CategoriaFK,
+        d.Sucursal_IdFK,
+        d.Fecha_Compra,
+        d.Costo,
+        d.Estado,
+        d.Cantidad,
+        c.Nombre_Categoria,
+        s.Nombre_Sucursal
+      FROM Dispositivo d
+      LEFT JOIN Categorias c ON d.Id_CategoriaFK = c.Id_Categoria
+      LEFT JOIN Sede s ON d.Sucursal_IdFK = s.Id_Sede
+    `);
+    
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener dispositivos:', err);
+    res.status(500).json({ error: 'Error al obtener dispositivos', details: err.message });
+  }
+});
+
+// Add a new device
+app.post('/api/devices', async (req, res) => {
+  const { Id_CategoriaFK, Sucursal_IdFK, Fecha_Compra, Costo, Estado, Cantidad } = req.body;
+  try {
+    const result = await pool.request()
+      .input('Id_CategoriaFK', sql.Int, Id_CategoriaFK)
+      .input('Sucursal_IdFK', sql.Int, Sucursal_IdFK)
+      .input('Fecha_Compra', sql.Date, Fecha_Compra)
+      .input('Costo', sql.Decimal(10, 2), Costo)
+      .input('Estado', sql.VarChar(50), Estado)
+      .input('Cantidad', sql.Int, Cantidad)
+      .query(`
+        INSERT INTO Dispositivos (Id_CategoriaFK, Sucursal_IdFK, Fecha_Compra, Costo, Estado, Cantidad)
+        VALUES (@Id_CategoriaFK, @Sucursal_IdFK, @Fecha_Compra, @Costo, @Estado, @Cantidad);
+        SELECT SCOPE_IDENTITY() AS Id_Dispositivo;
+      `);
+    res.status(201).json({ Id_Dispositivo: result.recordset[0].Id_Dispositivo, ...req.body });
+  } catch (err) {
+    console.error('Error al agregar dispositivo:', err);
+    res.status(500).json({ error: 'Error al agregar dispositivo', details: err.message });
+  }
+});
+
+// Update a device
+app.put('/api/devices/:id', async (req, res) => {
+  const { id } = req.params;
+  const { Id_CategoriaFK, Sucursal_IdFK, Fecha_Compra, Costo, Estado, Cantidad } = req.body;
+  try {
+    await pool.request()
+      .input('id', sql.Int, id)
+      .input('Id_CategoriaFK', sql.Int, Id_CategoriaFK)
+      .input('Sucursal_IdFK', sql.Int, Sucursal_IdFK)
+      .input('Fecha_Compra', sql.Date, Fecha_Compra)
+      .input('Costo', sql.Decimal(10, 2), Costo)
+      .input('Estado', sql.VarChar(50), Estado)
+      .input('Cantidad', sql.Int, Cantidad)
+      .query(`
+        UPDATE Dispositivos
+        SET Id_CategoriaFK = @Id_CategoriaFK,
+            Sucursal_IdFK = @Sucursal_IdFK,
+            Fecha_Compra = @Fecha_Compra,
+            Costo = @Costo,
+            Estado = @Estado,
+            Cantidad = @Cantidad
+        WHERE Id_Dispositivo = @id
+      `);
+    res.json({ message: 'Dispositivo actualizado exitosamente' });
+  } catch (err) {
+    console.error('Error al actualizar dispositivo:', err);
+    res.status(500).json({ error: 'Error al actualizar dispositivo', details: err.message });
+  }
+});
+
+// Delete a device
+app.delete('/api/devices/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.request()
+      .input('id', sql.Int, id)
+      .query('DELETE FROM Dispositivos WHERE Id_Dispositivo = @id');
+    res.json({ message: 'Dispositivo eliminado exitosamente' });
+  } catch (err) {
+    console.error('Error al eliminar dispositivo:', err);
+    res.status(500).json({ error: 'Error al eliminar dispositivo', details: err.message });
+  }
+});
+
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

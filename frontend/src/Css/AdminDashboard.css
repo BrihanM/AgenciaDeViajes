@@ -192,3 +192,34 @@
 .furniture-section button:hover {
   background-color: #9f0101;
 }
+
+/*Page de dispositivos*/
+.machinary-section {
+  margin-top: 20px;
+}
+
+.machinary-section form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.machinary-section input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.machinary-section button {
+  background-color: #bc0606;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.machinary-section button:hover {
+  background-color: #9f0101;
+}
