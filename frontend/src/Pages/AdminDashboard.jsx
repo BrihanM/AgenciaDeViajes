@@ -28,6 +28,14 @@ export default function AdminDashboard() {
     }
   };
 
+  //Estadisticas
+  const [activeTab, setActiveTab] = useState("new-trip");
+  const [stats, setStats] = useState({
+    users: 0,
+    trips: 0,
+    revenue: 0,
+    reservations: 0,
+  });
   //Trip - Viaje
   const [newTrip, setNewTrip] = useState({
     id: 0,
@@ -36,13 +44,6 @@ export default function AdminDashboard() {
     price: 0,
   });
   const [activeReservations, setActiveReservations] = useState([]);
-  const [stats, setStats] = useState({
-    users: 0,
-    trips: 0,
-    revenue: 0,
-    reservations: 0,
-  });
-  const [activeTab, setActiveTab] = useState("new-trip");
 
   //Employees - Empleados
   const [employees, setEmployees] = useState([]);
@@ -128,6 +129,7 @@ export default function AdminDashboard() {
   const [editingDevice, setEditingDevice] = useState(null);
   //--------------------------------------------------------------------------------------------
   useEffect(() => {
+    fetchStats();
     setActiveReservations([
       {
         id: 1,
@@ -151,7 +153,6 @@ export default function AdminDashboard() {
         status: "Cancelada",
       },
     ]);
-    setStats({ users: 1250, trips: 45, revenue: 150000, reservations: 890 });
     //Logica para Employees (Empleados)
     if (activeTab === "employees") {
       fetchEmployees();
@@ -183,6 +184,16 @@ export default function AdminDashboard() {
   }, [activeTab]);
 
   //----------------------------------------------------------------------
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get("http://localhost:8085/api/admin/stats");
+      setStats(response.data);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      // Opcionalmente, puedes mostrar un mensaje de error al usuario
+      alert("Error al cargar las estadísticas. Por favor, intente de nuevo.");
+    }
+  };
   const handleNewTripChange = (e) => {
     const { name, value } = e.target;
     setNewTrip((prevTrip) => ({
@@ -497,7 +508,7 @@ export default function AdminDashboard() {
       console.error("Error al eliminar sede:", error);
     }
   };
-  //Constantes de machinary (Maquinaria)
+  //Constantes de machinary (Dispositivos)
   const fetchDevices = async () => {
     try {
       const response = await axios.get("http://localhost:8085/api/devices");
@@ -940,10 +951,7 @@ export default function AdminDashboard() {
                   >
                     <option value="">Seleccione una sucursal</option>
                     {branches.map((branch) => (
-                      <option
-                        key={branch.Sucursal_Id}
-                        value={branch.Sucursal_Id}
-                      >
+                      <option key={branch.Id_Sede} value={branch.Id_Sede}>
                         {branch.Nombre}
                       </option>
                     ))}

@@ -90,6 +90,44 @@ app.get('/api/download-nomina', async (req, res) => {
   }
 });
 
+//Estadisticas
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    // Verificar si la conexión a la base de datos está disponible
+    if (!pool) {
+      throw new Error('La conexión a la base de datos no está disponible');
+    }
+
+    console.log('Iniciando consultas para estadísticas...');
+
+    const usersResult = await pool.request().query('SELECT COUNT(*) as count FROM Registro_Usuarios');
+    console.log('Consulta de usuarios completada:', usersResult.recordset[0].count);
+
+    const tripsResult = await pool.request().query('SELECT COUNT(*) as count FROM Vuelos');
+    console.log('Consulta de vuelos completada:', tripsResult.recordset[0].count);
+
+    const revenueResult = await pool.request().query('SELECT SUM(Total) as total FROM Factura');
+    console.log('Consulta de ingresos completada:', revenueResult.recordset[0].total);
+
+    const reservationsResult = await pool.request().query('SELECT COUNT(*) as count FROM Factura WHERE Estado = 1');
+    console.log('Consulta de reservas completada:', reservationsResult.recordset[0].count);
+
+    const stats = {
+      users: usersResult.recordset[0].count,
+      trips: tripsResult.recordset[0].count,
+      revenue: revenueResult.recordset[0].total || 0,
+      reservations: reservationsResult.recordset[0].count
+    };
+
+    console.log('Estadísticas compiladas:', stats);
+
+    res.json(stats);
+  } catch (err) {
+    console.error('Error detallado al obtener estadísticas:', err);
+    res.status(500).json({ error: 'Error al obtener estadísticas', details: err.message });
+  }
+});
+
 /*
   Se define una ruta POST para /api/login
   Extrae username y password del cuerpo de la petición
@@ -98,7 +136,7 @@ app.get('/api/download-nomina', async (req, res) => {
   Si no se encuentra, devuelve success: false
   Si ocurre un error, devuelve un status 500 con un mensaje de error 
 */
-// Routes
+// Routes de logueo
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -118,7 +156,7 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Añade esta ruta después de tus rutas existentes
+// Route de registro
 app.post('/api/register', async (req, res) => {
   const { cedula, nombre, apellido, telefono, correo, contraseña } = req.body;
   try {
@@ -146,52 +184,8 @@ app.post('/api/register', async (req, res) => {
     res.status(500).json({ success: false, error: 'Ocurrió un error durante el registro' });
   }
 });
-
-// Example route using the database
-app.get('/api/data', async (req, res) => {
-    try {
-      const result = await pool.request().query('SELECT * FROM Sesion');
-      res.json(result.recordset);
-    } catch (err) {
-      console.error('Error executing query:', err);
-      res.status(500).json({ error: 'An error occurred while fetching data' });
-    }
-});
-
-//Tabla Vehiculos
-app.get('/api/vehiculo', async (req, res) => {
-  try {
-    const result = await pool.request().query('SELECT * FROM Vehiculo');
-    res.json(result.recordset);
-  } catch (err) {
-    console.error('Error executing query:', err);
-    res.status(500).json({ error: 'An error occurred while fetching data' });
-  }
-});
-
-//Tabla Seguros
-app.get('/api/seguros', async (req, res) => {
-  try {
-    const result = await pool.request().query('SELECT * FROM Seguros');
-    res.json(result.recordset);
-  } catch (err) {
-    console.error('Error executing query:', err);
-    res.status(500).json({ error: 'An error occurred while fetching data' });
-  }
-});
-
-//Tabla Admin accounts
-app.get('/api/adminAccount', async (req, res) => {
-  try {
-    const result = await pool.request().query('SELECT * FROM Admin');
-    res.json(result.recordset);
-  } catch (err) {
-    console.error('Error executing query:', err);
-    res.status(500).json({ error: 'An error occurred while fetching data' });
-  }
-});
-
 //_______________________________________________________________________________
+//Route para obtener datos del usuario en mi perfil
 app.get('/api/user/:correo', async (req, res) => {
   const { correo } = req.params;
   try {
@@ -252,8 +246,8 @@ app.put('/api/user/:correo', async (req, res) => {
   }
 });
 
-//EndPoints CRUD para Aviones
-              /*Llamar la lista de aviones existentes ( C[R]UD Read - LEER)*/
+                                    //EndPoints CRUD para Aviones
+/*Llamar la lista de aviones existentes ( C[R]UD Read - LEER)*/
 app.get('/api/airplanes', async (req, res) => {
   try {
     const result = await pool.request().query('SELECT * FROM Avion');
@@ -263,8 +257,7 @@ app.get('/api/airplanes', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener aviones' });
   }
 });
-
-              /*Crear un nuevo avión ( [C]RUD Create - CREAR)*/
+/*Crear un nuevo avión ( [C]RUD Create - CREAR)*/
 app.post('/api/airplanes', async (req, res) => {
   const { Modelo, Fabricante, Año_Fabricacion, Numero_Asientos, Capacidad_Carga, NIT_ContratistaFK } = req.body;
   try {
@@ -284,8 +277,7 @@ app.post('/api/airplanes', async (req, res) => {
     res.status(500).json({ error: 'Error al agregar avión', details: err.message });
   }
 });
-
-              /*Actualizar un avión ( CR[U]D Update - ACTUALIZAR)*/
+/*Actualizar un avión ( CR[U]D Update - ACTUALIZAR)*/
 app.put('/api/airplanes/:id', async (req, res) => {
   const { id } = req.params;
   const { Modelo, Fabricante, Año_Fabricacion, Numero_Asientos, Capacidad_Carga, NIT_ContratistaFK } = req.body;
@@ -307,8 +299,7 @@ app.put('/api/airplanes/:id', async (req, res) => {
     res.status(500).json({ error: 'Error al actualizar avión' });
   }
 });
-
-              /*Borrar un avión (CRU[D] Delete - ELIMINAR)*/
+/*Borrar un avión (CRU[D] Delete - ELIMINAR)*/
 app.delete('/api/airplanes/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -322,8 +313,8 @@ app.delete('/api/airplanes/:id', async (req, res) => {
   }
 });
 
-//EndPoints CRUD para Empleados
-                            // Obtener todos los empleados
+                              //EndPoints CRUD para Empleados
+// Obtener todos los empleados
 app.get('/api/employees', async (req, res) => {
   try {
     const result = await pool.request().query(`
@@ -337,8 +328,7 @@ app.get('/api/employees', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener empleados' });
   }
 });
-
-                            // Crear un nuevo empleado
+// Crear un nuevo empleado
 app.post('/api/employees', async (req, res) => {
   const { Cedula, Tipo_Documento, Primer_Nombre, Segundo_Nombre, Primer_Apellido, Segundo_Apellido, Fecha_Nacimiento } = req.body;
   try {
@@ -360,8 +350,7 @@ app.post('/api/employees', async (req, res) => {
     res.status(500).json({ error: 'Error al agregar empleado', details: err.message });
   }
 });
-
-                            // Actualizar un empleado
+// Actualizar un empleado
 app.put('/api/employees/:cedula', async (req, res) => {
   const { cedula } = req.params;
   const { Tipo_Documento, Primer_Nombre, Segundo_Nombre, Primer_Apellido, Segundo_Apellido, Fecha_Nacimiento } = req.body;
@@ -390,8 +379,7 @@ app.put('/api/employees/:cedula', async (req, res) => {
     res.status(500).json({ error: 'Error al actualizar empleado' });
   }
 });
-
-                            // Eliminar un empleado
+// Eliminar un empleado
 app.delete('/api/employees/:cedula', async (req, res) => {
   const { cedula } = req.params;
   try {
@@ -429,7 +417,6 @@ app.get('/api/furniture', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener muebles', details: err.message });
   }
 });
-
 // Crear un nuevo mueble (CREATE)
 app.post('/api/furniture', async (req, res) => {
   const { Id_CategoriaFK, Sucursal_IdFK, Fecha_Adquisicion, Costo, Cantidad } = req.body;
@@ -449,7 +436,6 @@ app.post('/api/furniture', async (req, res) => {
     res.status(500).json({ error: 'Error al agregar mueble' });
   }
 });
-
 // Actualizar un mueble (UPDATE)
 app.put('/api/furniture/:id', async (req, res) => {
   const { id } = req.params;
@@ -462,16 +448,43 @@ app.put('/api/furniture/:id', async (req, res) => {
       .input('Fecha_Adquisicion', sql.Date, Fecha_Adquisicion)
       .input('Costo', sql.Decimal(10, 2), Costo)
       .input('Cantidad', sql.Int, Cantidad)
-      .query(`UPDATE Mueble SET Id_CategoriaFK = @Id_CategoriaFK, Sucursal_IdFK = @Sucursal_IdFK, 
-              Fecha_Adquisicion = @Fecha_Adquisicion, Costo = @Costo, Cantidad = @Cantidad 
-              WHERE Id_Mueble = @Id_Mueble`);
+      .query(`UPDATE Mueble
+         SET Id_CategoriaFK = @Id_CategoriaFK,
+          Sucursal_IdFK = @Sucursal_IdFK, 
+          Fecha_Adquisicion = @Fecha_Adquisicion,
+          Costo = @Costo,
+          Cantidad = @Cantidad
+          WHERE Id_Mueble = @Id_Mueble`);
     res.json({ message: 'Mueble actualizado con éxito' });
   } catch (err) {
     console.error('Error al actualizar mueble:', err);
     res.status(500).json({ error: 'Error al actualizar mueble' });
   }
 });
-
+// Asegúrate de que esta ruta esté devolviendo toda la información necesaria, incluyendo la categoría y la sede
+app.get('/api/furniture/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.request()
+      .input('id', sql.Int, id)
+      .query(`
+        SELECT m.*, c.Nombre AS NombreCategoria, s.Nombre AS NombreSede
+        FROM Mueble m
+        LEFT JOIN Categorias c ON m.CategoriaID = c.ID
+        LEFT JOIN Sede s ON m.SedeID = s.Id_Sede
+        WHERE m.ID = @id
+      `);
+    
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: 'Mueble no encontrado' });
+    }
+    
+    res.json(result.recordset[0]);
+  } catch (err) {
+    console.error('Error al obtener mueble:', err);
+    res.status(500).json({ error: 'Error al obtener mueble', details: err.message });
+  }
+});
 // Eliminar un mueble (DELETE)
 app.delete('/api/furniture/:id', async (req, res) => {
   const { id } = req.params;
@@ -497,7 +510,6 @@ app.get('/api/devices', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener dispositivos' });
   }
 });
-
 // Endpoint para obtener categorías
 app.get('/api/categories', async (req, res) => {
   try {
@@ -511,7 +523,7 @@ app.get('/api/categories', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener categorías', details: err.message });
   }
 });
-
+// Endpoint para obtener dispositivos con el filtrado por nombre
 app.get('/api/devices', async (req, res) => {
   try {
     const result = await pool.request().query(`
@@ -536,7 +548,6 @@ app.get('/api/devices', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener dispositivos', details: err.message });
   }
 });
-
 // Add a new device
 app.post('/api/devices', async (req, res) => {
   const { Id_CategoriaFK, Sucursal_IdFK, Fecha_Compra, Costo, Estado, Cantidad } = req.body;
@@ -559,7 +570,6 @@ app.post('/api/devices', async (req, res) => {
     res.status(500).json({ error: 'Error al agregar dispositivo', details: err.message });
   }
 });
-
 // Update a device
 app.put('/api/devices/:id', async (req, res) => {
   const { id } = req.params;
@@ -589,7 +599,6 @@ app.put('/api/devices/:id', async (req, res) => {
     res.status(500).json({ error: 'Error al actualizar dispositivo', details: err.message });
   }
 });
-
 // Delete a device
 app.delete('/api/devices/:id', async (req, res) => {
   const { id } = req.params;
@@ -604,7 +613,7 @@ app.delete('/api/devices/:id', async (req, res) => {
   }
 });
 
-// EndPoints CRUD para Sedes
+                                  // EndPoints CRUD para Sedes
 //Endpoint de sede
 app.get('/api/branches', async (req, res) => {
   try {
@@ -618,7 +627,6 @@ app.get('/api/branches', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener sucursales', details: err.message });
   }
 });
-
 // Obtener todas las sedes
 app.get('/api/branches', async (req, res) => {
   try {
@@ -629,7 +637,6 @@ app.get('/api/branches', async (req, res) => {
     res.status(500).json({ error: 'Error al obtener sedes' });
   }
 });
-
 // Crear una nueva sede
 app.post('/api/branches', async (req, res) => {
   const { EmpresaNITFK, Nombre, Direccion, Telefono, Correo } = req.body;
@@ -651,7 +658,6 @@ app.post('/api/branches', async (req, res) => {
     res.status(500).json({ error: 'Error al agregar sede', details: err.message });
   }
 });
-
 // Actualizar una sede
 app.put('/api/branches/:id', async (req, res) => {
   const { id } = req.params;
@@ -713,7 +719,6 @@ app.put('/api/branches/:id', async (req, res) => {
     res.status(500).json({ error: 'Error al actualizar sede', details: err.message });
   }
 });
-
 // Eliminar una sede
 app.delete('/api/branches/:id', async (req, res) => {
   const { id } = req.params;
@@ -727,7 +732,6 @@ app.delete('/api/branches/:id', async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar sede' });
   }
 });
-
 //Cargar empresas desde la base de datos
 app.get('/api/empresas', async (req, res) => {
   try {
